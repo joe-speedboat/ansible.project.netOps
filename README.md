@@ -16,6 +16,18 @@ Simple example to backup all network devices into one dir with single config for
 Shell script to create branch for each device and push it to git repo.    
 This makes it easy to search changes.
 
+## huawei_ce_fact_inventory_csv.yml
+Normally this would be an easy jinja2 template with native facts in it.   
+Sadly Huawei is not really maintaining its Ansible modules and the hardware facts are broken, so this a kind of a workaround.   
+Its not nice, but can save you days over days in large env....    
+
+* Can handle stacked switches
+This creates a csv with this fields     
+* hostname
+* hw_type
+* hw_serial
+* hw_manu_date
+* software
 
 ## NET_EXEC
 Run cli commands on several device types and evaluate return code depending on device type

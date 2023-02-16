@@ -1,0 +1,125 @@
+---
+- name: get config
+  hosts: huawei
+  gather_facts: no
+  connection: local
+  vars:
+    output_path: "./"
+    filename: "huawei_device_report.csv"
+
+  pre_tasks:
+  - name: Test if host is online
+    ansible.builtin.wait_for:
+      timeout: 5
+      port: '{{ ansible_port|d(22) }}'
+      host: '{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}'
+    vars:
+      ansible_connection: local
+
+  tasks:
+  - name: generate date var
+    set_fact: date="{{lookup('pipe','date +%Y%m%d_%H%M')}}"
+    run_once: true
+    become: no
+    vars:
+      ansible_connection: local
+
+  - name: CSV - Create file and set the header
+    lineinfile:
+      dest: "{{ output_path }}/{{ filename }}"
+      line:
+        hostname,hw_type,hw_serial,hw_manu_date,software
+      create: yes
+      state: present
+    run_once: true
+    become: no
+    vars:
+      ansible_connection: local
+
+  - name: "Gather Facts"
+    community.network.ce_facts:
+      gather_subset:
+      - interfaces
+      - default
+
+  - name: "Run multiple commands on remote nodes"
+    community.network.ce_command:
+      commands:
+      - display version
+      - display device
+      - display device manufacture-info
+    register: cmd_facts
+
+  - name: collect cmd_facts list
+    set_fact: 
+      software: "{{ cmd_facts.stdout_lines[0]|select('match', 'Software')|join('++') }}"
+      hw_type: "{{ cmd_facts.stdout_lines[1]|select('match', '^[0-9]')|join('++') }}"
+      hw_serial: "{{ cmd_facts.stdout_lines[2]|select('match', '^[0-9]')|join('++') }}"
+      hw_manu_date: "{{ cmd_facts.stdout_lines[2]|select('match', '^[0-9]')|join('++') }}"
+
+  - name: cleanup software fact
+    set_fact:
+      software: '{{ software|regex_replace(item.0, item.1) }}'
+    loop:
+    - ["Software[ ]+Version[ ]+:[ ]+", ""]
+    - [", ", " - "]
+
+  - name: cleanup hw_type fact
+    set_fact:
+      hw_type: '{{ hw_type|regex_replace(item.0, item.1) }}'
+    loop:
+    - ["[0-9][ ]+-[ ]+", ""]
+    - ["([a-zA-Z0-9]+-[a-zA-Z0-9]+).*[+]", "\\1++"]
+    - ["[ ]+.*", ""]
+
+  - name: cleanup hw_serial fact
+    set_fact:
+      hw_serial: '{{ hw_serial|regex_replace(item.0, item.1) }}'
+    loop:
+    - ["^[0-9][ ]+[-][ ]+([0-9a-zA-Z]+)[ ]+([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9])", "\\1"]
+    - ["[+]+[0-9][ ]+[-][ ]+([0-9a-zA-Z]+)[ ]+([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9])", "++\\1"]
+
+  - name: cleanup hw_manu_date fact
+    set_fact:
+      hw_manu_date: '{{ hw_manu_date|regex_replace(item.0, item.1) }}'
+    loop:
+    - ["^[0-9][ ]+[-][ ]+([0-9a-zA-Z]+)[ ]+([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9])", "\\2"]
+    - ["[+]+[0-9][ ]+[-][ ]+([0-9a-zA-Z]+)[ ]+([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9])", "++\\2"]
+
+  - name: prepare custom_facts
+    set_fact: 
+      custom_facts:
+        software: "{{ software|split('++') }}"
+        hw_type: "{{ hw_type|split('++') }}"
+        hw_serial: "{{ hw_serial|split('++') }}"
+        hw_manu_date: "{{ hw_manu_date|split('++') }}"
+
+  - name: add custom_facts to ansible_facts
+    set_fact:
+      ansible_facts: "{{ ansible_facts|combine(custom_facts) }}"
+
+
+  - name: CSV - Get devices facts
+    set_fact:
+      csv_tmp: >
+        {{ ansible_facts.hostname }},{{ ansible_facts.hw_type|join('++') }},{{ ansible_facts.hw_serial|join('++') }},{{ ansible_facts.hw_manu_date|join('++') }},{{ ansible_facts.software|join('++') }}
+
+  - name: CSV - Write information into .csv file
+    lineinfile:
+      insertafter: EOF
+      dest: "{{ output_path }}/{{ filename }}"
+      line: "{{ csv_tmp }}"
+    become: no
+    vars:
+      ansible_connection: local
+
+  - name: CSV - Blank lines removal
+    lineinfile:
+      path: "./{{ output_path }}/{{ filename }}"
+      state: absent
+      regex: '^\s*$'    
+    become: no
+    vars:
+      ansible_connection: local
+...
+
