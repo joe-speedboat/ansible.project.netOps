@@ -1,0 +1,12 @@
+- name: HUAWEI| backup Config of cloud engine device
+  community.network.ce_config:
+    backup: yes
+    backup_options:
+      filename: "{{ inventory_hostname }}.cfg"
+      dir_path: "{{ net_dev_backup_dir }}"
+
+- name: Save changes to device
+  community.network.ce_config:
+    save: yes
+  when: net_dev_backup_save_cfg|bool
+

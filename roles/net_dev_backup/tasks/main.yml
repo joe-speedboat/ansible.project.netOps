@@ -1,0 +1,31 @@
+---
+# tasks file for net_dev_backup
+- name: show variables
+  debug:
+    msg:
+      - ansible_network_os: "{{ ansible_network_os }}"
+  when: net_dev_backup_debug_vars
+
+# ansible_network_os:
+#   huawei-switch: community.network.ce
+#   huawei-wlan-controller: 
+#   fortigate-fw: fortinet.fortios.fortios
+#   cisco-switch: 
+
+- name: prepare backup dir
+  file:
+    path: "{{ net_dev_backup_dir }}"
+    mode: 0750
+    state: directory
+  delegate_to: localhost
+  run_once: true
+
+- name: Backup Network Device
+  include_tasks: '{{ backup_device }}'
+  with_first_found:
+    - files:
+        - 'backup-{{ ansible_network_os }}.yml'
+        - 'backup-unknown.yml'
+      errors: 'ignore'
+  loop_control:
+    loop_var: backup_device

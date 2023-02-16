@@ -1,0 +1,25 @@
+- name: CISCO| backup Config of WLAN Controller
+  aireos_config:
+    backup: yes
+    lines: ''
+    backup_options:
+      filename: "{{ inventory_hostname }}.cfg"
+      dir_path: "{{ net_dev_backup_dir }}"
+
+- name: save running config to device
+  aireos_config:
+    save_when: always
+  when: net_dev_backup_save_cfg|bool
+
+- name: remove some lines to make config git ready
+  lineinfile:
+    path: "{{ net_dev_backup_dir }}/{{ inventory_hostname }}.cfg"
+    state: absent
+    regexp: '{{ item }}'
+  with_items:
+  - "rogue .* alert "
+  - "rogue .* Unknown "
+- name: remove multiple white lines to make config git ready
+  shell:
+    sed -i '/^$/N;/^\n$/D' "{{ net_dev_backup_dir }}/{{ inventory_hostname }}.cfg"
+

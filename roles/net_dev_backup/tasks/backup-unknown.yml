@@ -1,0 +1,5 @@
+# tasks/backup-unknown.yml
+---
+- name: device os unknown
+  fail:
+    msg: "device os {{ ansible_network_os }} is unknown"

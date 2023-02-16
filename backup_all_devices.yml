@@ -1,0 +1,8 @@
+---
+- name: backup all device config
+  hosts: huawei,fortigate
+  gather_facts: no
+  serial: 500
+  roles:
+  - net_dev_backup
+

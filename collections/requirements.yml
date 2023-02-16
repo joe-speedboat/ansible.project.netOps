@@ -1,0 +1,10 @@
+# collections/requirements.yml
+---
+collections:
+  - name: community.general
+  - name: community.network
+  - name: ansible.posix
+  - name: fortinet.fortios
+    version: 2.2.0
+
+...

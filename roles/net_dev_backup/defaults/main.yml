@@ -1,0 +1,12 @@
+---
+# defaults file for net_dev_backup
+
+# show debug vars
+net_dev_backup_debug_vars: False
+
+# where to save: devicename.cfg
+net_dev_backup_dir: ./backup
+
+# write down running config when doing backup
+# keep in mind, that fortigate devices always save the configuration once it got applied
+net_dev_backup_save_cfg: True

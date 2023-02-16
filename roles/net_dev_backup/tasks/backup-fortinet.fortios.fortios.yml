@@ -1,0 +1,26 @@
+- name: FORTIGATE| backup global or a_specific_vdom settings
+  vars:
+    ansible_connection: ssh
+  raw: "show full-configuration"
+  register: cmd
+  failed_when: False
+
+- name: print cmd details
+  debug:
+    msg:
+      - ===== output =====
+      - "{{ cmd.stdout_lines }}"
+  when: >
+    ("Command fail" in cmd.stdout) or
+    (cmd.rc > 0)
+
+- name: stop if cmd failed
+  fail:
+  when: >
+    ("Command fail" in cmd.stdout) or
+    (cmd.rc > 0)
+
+- name: write config to filesystem
+  copy: 
+    content: "{{ cmd.stdout }}" 
+    dest: "{{ net_dev_backup_dir }}/{{ inventory_hostname }}.cfg"

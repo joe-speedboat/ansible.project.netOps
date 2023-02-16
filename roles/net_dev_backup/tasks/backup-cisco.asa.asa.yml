@@ -1,0 +1,13 @@
+- name: CISCO| backup Config of ASA device
+  asa_config:
+    backup: yes
+    lines: ''
+    backup_options:
+      filename: "{{ inventory_hostname }}.cfg"
+      dir_path: "{{ net_dev_backup_dir }}"
+
+- name: save running config to device
+  ios_config:
+    save_when: always
+  when: net_dev_backup_save_cfg|bool
+

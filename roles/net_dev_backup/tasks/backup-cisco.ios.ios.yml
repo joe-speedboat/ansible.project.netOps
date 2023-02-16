@@ -1,0 +1,26 @@
+- name: CISCO| backup Config of catalyst device
+  ios_config:
+    backup_options:
+      dir_path: "{{ net_dev_backup_dir }}"
+      filename: "{{ inventory_hostname }}.cfg"
+    backup: yes
+
+- name: save running config to device
+  ios_config:
+    save_when: always
+  when: net_dev_backup_save_cfg|bool
+
+- name: remove some lines to make config git ready
+  lineinfile:
+    path: "{{ net_dev_backup_dir }}/{{ inventory_hostname }}.cfg"
+    state: absent
+    regexp: '{{ item }}'
+  delegate_to: localhost
+  become: no
+  with_items:
+  - "^Building configuration..."
+  - "^Current configuration : .*"
+  - "^! Last configuration change at .*"
+  - "^! NVRAM config last updated at .*"
+
+
