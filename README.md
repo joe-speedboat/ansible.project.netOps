@@ -26,6 +26,7 @@ GNU GENERAL PUBLIC LICENSE - Version 3
 
 
 ## Author Information
+Copyright (c) Chris Ruettimann <chris@bitbull.ch>    
 I don't do Linux for 20 years because I love Unix or consoles.   
 OpenSource is what I love and want to do ...    
 moving together ...     
